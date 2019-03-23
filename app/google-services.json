@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "915743450028",
+    "firebase_url": "https://unipitouristicapp.firebaseio.com",
+    "project_id": "unipitouristicapp",
+    "storage_bucket": "unipitouristicapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:915743450028:android:d40b17e016d55cbf",
+        "android_client_info": {
+          "package_name": "com.kalom.UnipiTouristicApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "915743450028-voptgm1rl7hu6ugtmo8odma2meugm9mb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kalom.UnipiTouristicApp",
+            "certificate_hash": "85375e2206bc444806cf2dc7d8799e1dcef17c1d"
+          }
+        },
+        {
+          "client_id": "915743450028-h5rupjfqalv94es7ao3jtsuqogreav38.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeAXKqnhavWQvhE11fDKCjlwBrDym4OjU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "915743450028-h5rupjfqalv94es7ao3jtsuqogreav38.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
