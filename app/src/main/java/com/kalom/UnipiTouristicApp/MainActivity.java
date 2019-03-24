@@ -8,6 +8,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -26,14 +27,13 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements LocationListener {
 
@@ -41,8 +41,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     Button setDistanceButton;
     DatabaseReference myRef;
     LocationManager mLocationManager;
-    Location location;
-    private FusedLocationProviderClient mFusedLocationProviderClient;
+    private FusedLocationProviderClient mFusedLocation;
     //    private GoogleMap mMap;
     private static ArrayList<PositionModel> pointOfInterestList = new ArrayList<>();
     private static boolean hasRun = false;
@@ -52,8 +51,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final int PERMGRANTED = PackageManager.PERMISSION_GRANTED;
-    private boolean mLocationPermissionsGranted = false;
-    ArrayList<String> dataBasePointsOfInterest = new ArrayList<>();
+    private boolean mLocationPermGranted = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,18 +59,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         setContentView(R.layout.activity_main);
         racicalText = findViewById(R.id.textViewRadical);
         setDistanceButton = findViewById(R.id.button);
-        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        getPOIsList();
+        mFusedLocation = LocationServices.getFusedLocationProviderClient(this);
+//        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         getLocationPermission();
 
         if (!hasRun) {
             migrateDataPOIs();
-            hasRun = true;
         }
+        getPOIsList();
         setDistanceButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mLocationPermissionsGranted && isServicesOK()) {
+                if (mLocationPermGranted && isServicesOK()) {
                     getDeviceLocation();
                     if ((ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                             != PackageManager.PERMISSION_GRANTED) && (ActivityCompat.checkSelfPermission(getApplicationContext(),
@@ -86,11 +84,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     private boolean isTooClose(Location location) {
-        for (PositionModel poisLocation : pointOfInterestList)
+        for (PositionModel pointOfInterest : pointOfInterestList)
             if (racicalText != null) {
-                float distance = location.distanceTo(poisLocation.getGeoloc());
+                Location locationPointOfInterest = new Location("");
+                locationPointOfInterest.setLatitude(pointOfInterest.getLatitude());
+                locationPointOfInterest.setLongitude(pointOfInterest.getLongtitude());
+                float distance = location.distanceTo(locationPointOfInterest);
                 if (racicalText.getText().toString().compareTo(Float.toString(distance)) < 0) {
-                    message("Your location is close to point of interest..." + "in " + poisLocation.getTitle());
+                    message("Your location is close to point of interest..." + "in " + pointOfInterest.getTitle());
                     return true;
                 }
             }
@@ -100,43 +101,55 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     private void getPOIsList() {
         myRef = FirebaseDatabase.getInstance().getReference("POIs");
-        myRef.addValueEventListener(new ValueEventListener() {
+        myRef.addChildEventListener(new ChildEventListener() {
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String prevChildKey) {
                 showData(dataSnapshot);
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
+
+
+//                addValueEventListener(new ValueEventListener() {
+//            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                showData(dataSnapshot);
 //                pointOfInterestList.clear();
 //                for (DataSnapshot POIs : dataSnapshot.getChildren()) {
 //                    PositionModel pointOfInterest = POIs.getValue(PositionModel.class);
 //                    pointOfInterestList.add(pointOfInterest);
 //                }
-            }
+//            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w(TAG, "loadPost:onCancelled", databaseError.toException());
-            }
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//                Log.w(TAG, "loadPost:onCancelled", databaseError.toException());
+//            }
         });
     }
 
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void showData(DataSnapshot dataSnapshot) {
-        for (DataSnapshot ds : dataSnapshot.getChildren()) {
-            PositionModel pointOfInterest = new PositionModel();
-            pointOfInterest.setTitle(Objects.requireNonNull(ds.getValue(PositionModel.class)).getTitle()); //Set title
-            pointOfInterest.setCateg(Objects.requireNonNull(ds.getValue(PositionModel.class).getCateg())); //Set Gategory
-            pointOfInterest.setDesc(Objects.requireNonNull(ds.getValue(PositionModel.class).getDesc())); //Set Description
-            pointOfInterest.setGeoloc(Objects.requireNonNull(ds.getValue(PositionModel.class).getGeoloc())); //Set Location Object
-        }
+        PositionModel position = dataSnapshot.getValue(PositionModel.class);
+        pointOfInterestList.add(position);
     }
 
     private void getDeviceLocation() {
         Log.d(TAG, "getDeviceLocation: getting the devices current location");
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+        mFusedLocation = LocationServices.getFusedLocationProviderClient(this);
         try {
-            if (mLocationPermissionsGranted) {
-                final Task location = mFusedLocationProviderClient.getLastLocation();
+            if (mLocationPermGranted) {
+                final Task location = mFusedLocation.getLastLocation();
                 location.addOnCompleteListener(new OnCompleteListener() {
                     @Override
                     public void onComplete(@NonNull Task task) {
@@ -168,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 FINE_LOCATION) == PERMGRANTED) {
             if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                     COURSE_LOCATION) == PERMGRANTED) {
-                mLocationPermissionsGranted = true;
+                mLocationPermGranted = true;
 //                initMap();
             } else {
                 ActivityCompat.requestPermissions(this,
@@ -205,19 +218,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult: called.");
-        mLocationPermissionsGranted = false;
+        mLocationPermGranted = false;
         switch (requestCode) {
             case LOCATION_PERMISSION_REQUEST_CODE: {
                 if (grantResults.length > 0) {
                     for (int grantResult : grantResults) {
                         if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                            mLocationPermissionsGranted = false;
+                            mLocationPermGranted = false;
                             Log.d(TAG, "onRequestPermissionsResult: permission failed");
                             return;
                         }
                     }
                     Log.d(TAG, "onRequestPermissionsResult: permission granted");
-                    mLocationPermissionsGranted = true;
+                    mLocationPermGranted = true;
                     //initialize our map
 //                    initMap();
                 }
@@ -231,27 +244,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     private void migrateDataPOIs() {
         myRef = FirebaseDatabase.getInstance().getReference("POIs");
-        String id = myRef.push().getKey();
-        Location geoloc1 = new Location("");
-        geoloc1.setLatitude(37.968211);
-        geoloc1.setLongitude(23.720583);
-        PositionModel position1 = new PositionModel("Acropolis", "Archeological place high level", "builtings", geoloc1);
-
-        Location geoloc2 = new Location("");
-        geoloc2.setLatitude(37.969252);
-        geoloc2.setLongitude(23.740268);
-        PositionModel position2 = new PositionModel("kalhmarmaro", "Archeological place high level", "builtings", geoloc2);
-
-        Location geoloc3 = new Location("");
-        geoloc3.setLatitude(37.968685);
-        geoloc3.setLongitude(23.731924);
-        PositionModel position3 = new PositionModel("Stiles tou Dios", "Archeological place high level", "builtings", geoloc3);
-
         ArrayList<PositionModel> dataMigrated = new ArrayList<>();
-        dataMigrated.add(position1);
-        dataMigrated.add(position2);
-        dataMigrated.add(position3);
-        myRef.child(id).setValue(dataMigrated);
+        dataMigrated.add(new PositionModel("Acropolis", "Archeological place high level", "builtings", 37.968211, 23.720583));
+        dataMigrated.add(new PositionModel("kalhmarmaro", "Archeological place high level", "builtings", 37.969252, 23.740268));
+        dataMigrated.add(new PositionModel("Stiles tou Dios", "Archeological place high level", "builtings", 37.968685, 23.731924));
+        dataMigrated.add(new PositionModel("Arxaia Korinthos", "Archeological place high level", "city", 37.904397, 22.877133));
+        myRef.setValue(dataMigrated);
         hasRun = true;
 
     }

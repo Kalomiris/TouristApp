@@ -10,16 +10,19 @@ public class PositionModel {
     private String title;
     private String desc;
     private String categ;
-    private Location geoloc;
+    private double latitude;
+    private double longtitude;
 
-    public PositionModel(String title, String desc, String categ, Location geoloc) {
+    public PositionModel(String title, String desc, String categ, double latitude, double longtitude) {
         this.title = title;
         this.desc = desc;
         this.categ = categ;
-        this.geoloc = geoloc;
+        this.latitude = latitude;
+        this.longtitude = longtitude;
     }
 
-    public PositionModel(){}
+    public PositionModel() {
+    }
 
     public String getTitle() {
         return title;
@@ -45,11 +48,19 @@ public class PositionModel {
         this.categ = categ;
     }
 
-    public Location getGeoloc() {
-        return geoloc;
+    public double getLatitude() {
+        return latitude;
     }
 
-    public void setGeoloc(Location geoloc) {
-        this.geoloc = geoloc;
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongtitude() {
+        return longtitude;
+    }
+
+    public void setLongtitude(double longtitude) {
+        this.longtitude = longtitude;
     }
 }
