@@ -1,12 +1,12 @@
 package com.kalom.UnipiTouristicApp;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Build;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -17,16 +17,19 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
 import android.widget.Toast;
 
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.SettingsClient;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -35,12 +38,13 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements LocationListener {
+import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
-    TextView racicalText;
+public class MainActivity extends AppCompatActivity {
+
+    EditText racicalText;
     Button setDistanceButton;
     DatabaseReference myRef;
-    LocationManager mLocationManager;
     private FusedLocationProviderClient mFusedLocation;
     //    private GoogleMap mMap;
     private static ArrayList<PositionModel> pointOfInterestList = new ArrayList<>();
@@ -52,17 +56,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final int PERMGRANTED = PackageManager.PERMISSION_GRANTED;
     private boolean mLocationPermGranted = false;
+    private long UPDATE_INTERVAL = 10 * 1000;  /* 10 secs */
+    private long FASTEST_INTERVAL = 2000; /* 2 sec */
+    boolean outOfRange = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        racicalText = findViewById(R.id.textViewRadical);
+        racicalText = findViewById(R.id.editText);
         setDistanceButton = findViewById(R.id.button);
-        mFusedLocation = LocationServices.getFusedLocationProviderClient(this);
-//        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        getLocationPermission();
-
+        mFusedLocation = getFusedLocationProviderClient(this);
         if (!hasRun) {
             migrateDataPOIs();
         }
@@ -70,32 +74,35 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         setDistanceButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (mLocationPermGranted && isServicesOK()) {
-                    getDeviceLocation();
-                    if ((ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                            != PackageManager.PERMISSION_GRANTED) && (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                            Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED)) {
-                        return;
+                if (getLocationPermission() && mLocationPermGranted && isServicesOK()) {
+                    String inputRadical = racicalText.getText().toString();
+                    if (!inputRadical.equals("")) {
+                        message("Radical is saved!");
+                        startLocationUpdates(inputRadical);
+                    } else {
+                        message("Enter a number in field!");
                     }
-                    message("Radical is saved!");
                 }
             }
         });
     }
 
-    private boolean isTooClose(Location location) {
-        for (PositionModel pointOfInterest : pointOfInterestList)
-            if (racicalText != null) {
-                Location locationPointOfInterest = new Location("");
-                locationPointOfInterest.setLatitude(pointOfInterest.getLatitude());
-                locationPointOfInterest.setLongitude(pointOfInterest.getLongtitude());
-                float distance = location.distanceTo(locationPointOfInterest);
-                if (racicalText.getText().toString().compareTo(Float.toString(distance)) < 0) {
-                    message("Your location is close to point of interest..." + "in " + pointOfInterest.getTitle());
-                    return true;
-                }
+    private boolean isTooClose(Location location, String inputRadical) {
+        if (!outOfRange) {
+            return true;
+        }
+        for (PositionModel pointOfInterest : pointOfInterestList) {
+            Location locationPointOfInterest = new Location("");
+            locationPointOfInterest.setLatitude(pointOfInterest.getLatitude());
+            locationPointOfInterest.setLongitude(pointOfInterest.getLongtitude());
+            float distance = location.distanceTo(locationPointOfInterest);
+            if (inputRadical.compareTo(Float.toString(distance)) > 0) {
+                message("Your location is close to point of interest..." + "in " + pointOfInterest.getTitle());
+                outOfRange = false;
+                return true;
             }
-        message("Set up your device, error...");
+        }
+        outOfRange = true;
         return false;
     }
 
@@ -105,74 +112,54 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String prevChildKey) {
-                showData(dataSnapshot);
+                getData(dataSnapshot);
             }
 
-            @Override
-            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
-            @Override
-            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
-            @Override
-            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {}
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {}
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            }
 
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+            }
 
-//                addValueEventListener(new ValueEventListener() {
-//            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                showData(dataSnapshot);
-//                pointOfInterestList.clear();
-//                for (DataSnapshot POIs : dataSnapshot.getChildren()) {
-//                    PositionModel pointOfInterest = POIs.getValue(PositionModel.class);
-//                    pointOfInterestList.add(pointOfInterest);
-//                }
-//            }
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            }
 
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {
-//                Log.w(TAG, "loadPost:onCancelled", databaseError.toException());
-//            }
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            }
         });
     }
 
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void showData(DataSnapshot dataSnapshot) {
+    private void getData(DataSnapshot dataSnapshot) {
         PositionModel position = dataSnapshot.getValue(PositionModel.class);
         pointOfInterestList.add(position);
     }
 
-    private void getDeviceLocation() {
-        Log.d(TAG, "getDeviceLocation: getting the devices current location");
-        mFusedLocation = LocationServices.getFusedLocationProviderClient(this);
-        try {
-            if (mLocationPermGranted) {
-                final Task location = mFusedLocation.getLastLocation();
-                location.addOnCompleteListener(new OnCompleteListener() {
+    @SuppressLint("MissingPermission")
+    private void startLocationUpdates(final String inputRadical) {
+        @SuppressLint("RestrictedApi")
+        LocationRequest mLocationRequest = new LocationRequest();
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(UPDATE_INTERVAL);
+        mLocationRequest.setFastestInterval(FASTEST_INTERVAL);
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        LocationSettingsRequest locationSettingsRequest = builder.build();
+
+        SettingsClient settingsClient = LocationServices.getSettingsClient(this);
+        settingsClient.checkLocationSettings(locationSettingsRequest);
+        getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, new LocationCallback() {
                     @Override
-                    public void onComplete(@NonNull Task task) {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "onComplete: found location!");
-                            Location currentLocation = (Location) task.getResult();
-                            if (isTooClose(currentLocation)) {
-                            }
-//                            moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
-//                                    DEFAULT_ZOOM);
-                        } else {
-                            Log.d(TAG, "onComplete: current location is null");
-//                            Toast.makeText(MapActivity.this, "unable to get current location", Toast.LENGTH_SHORT).show();
-                        }
+                    public void onLocationResult(LocationResult locationResult) {
+                        isTooClose(locationResult.getLastLocation(), inputRadical);
                     }
-                });
-            }
-        } catch (SecurityException e) {
-            Log.e(TAG, "getDeviceLocation: SecurityException: " + e.getMessage());
-        }
+                },
+                Looper.myLooper());
     }
 
-    private void getLocationPermission() {
+    private boolean getLocationPermission() {
         Log.d(TAG, "getLocationPermission: getting location permissions");
         String[] permissions = {Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION};
@@ -182,22 +169,25 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
                     COURSE_LOCATION) == PERMGRANTED) {
                 mLocationPermGranted = true;
+                return true;
 //                initMap();
             } else {
                 ActivityCompat.requestPermissions(this,
                         permissions,
                         LOCATION_PERMISSION_REQUEST_CODE);
+                return false;
             }
         } else {
             ActivityCompat.requestPermissions(this,
                     permissions,
                     LOCATION_PERMISSION_REQUEST_CODE);
+            return false;
         }
     }
 
-    public boolean isServicesOK() {
+    private boolean isServicesOK() {
         Log.d(TAG, "isServicesOK: checking google services version");
-
+        //reset view in editText
         int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(MainActivity.this);
 
         if (available == ConnectionResult.SUCCESS) {
@@ -224,14 +214,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 if (grantResults.length > 0) {
                     for (int grantResult : grantResults) {
                         if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                            mLocationPermGranted = false;
                             Log.d(TAG, "onRequestPermissionsResult: permission failed");
                             return;
                         }
                     }
                     Log.d(TAG, "onRequestPermissionsResult: permission granted");
                     mLocationPermGranted = true;
-                    //initialize our map
 //                    initMap();
                 }
             }
@@ -239,7 +227,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     private void message(String messageKey) {
-        Toast.makeText(this, messageKey, Toast.LENGTH_LONG).show();
+        Toast.makeText(this, messageKey, Toast.LENGTH_SHORT).show();
     }
 
     private void migrateDataPOIs() {
@@ -254,23 +242,4 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
 }
