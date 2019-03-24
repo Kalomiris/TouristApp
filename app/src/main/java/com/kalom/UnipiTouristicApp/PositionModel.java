@@ -4,8 +4,10 @@ import android.location.Location;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
+import java.io.Serializable;
+
 @IgnoreExtraProperties
-public class PositionModel {
+public class PositionModel implements Serializable {
 
     private String title;
     private String desc;

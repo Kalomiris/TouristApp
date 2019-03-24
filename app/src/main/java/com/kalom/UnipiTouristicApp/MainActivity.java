@@ -3,9 +3,12 @@ package com.kalom.UnipiTouristicApp;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.location.Location;
 import android.os.Build;
+import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,6 +21,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 
@@ -42,30 +46,40 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
 
 public class MainActivity extends AppCompatActivity {
 
-    EditText racicalText;
-    Button setDistanceButton;
-    DatabaseReference myRef;
+    private EditText racicalText;
+    private Button setDistanceButton;
+    private Button showDetailsButton;
+    private DatabaseReference myRef;
+    private ProgressBar spinner;
     private FusedLocationProviderClient mFusedLocation;
-    //    private GoogleMap mMap;
-    private static ArrayList<PositionModel> pointOfInterestList = new ArrayList<>();
+    boolean outOfRange = true;
     private static boolean hasRun = false;
+    private static boolean mLocationPermGranted = false;
+    private static boolean canRedirect;
     private static final String TAG = "MainActivity";
     private static final String FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String COURSE_LOCATION = Manifest.permission.ACCESS_COARSE_LOCATION;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1234;
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final int PERMGRANTED = PackageManager.PERMISSION_GRANTED;
-    private boolean mLocationPermGranted = false;
-    private long UPDATE_INTERVAL = 10 * 1000;  /* 10 secs */
-    private long FASTEST_INTERVAL = 2000; /* 2 sec */
-    boolean outOfRange = true;
+    private static final long UPDATE_INTERVAL = 10 * 1000;  //10 SECOND
+    private static final long FASTEST_INTERVAL = 2000; //2 SECOND
+    private static final long SOME_DELAY = 1000; //5 SECOND
+    private static ArrayList<PositionModel> pointOfInterestList = new ArrayList<>();
+    private static ArrayList<PositionModel> saveModelForRedirect = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        canRedirect = false;
+        pointOfInterestList.clear();
         racicalText = findViewById(R.id.editText);
-        setDistanceButton = findViewById(R.id.button);
+        setDistanceButton = findViewById(R.id.rangeButton);
+        showDetailsButton = findViewById(R.id.showActivityButton);
+        showDetailsButton.setEnabled(canRedirect);
+        spinner = findViewById(R.id.progressBar);
+        spinner.setVisibility(View.GONE);
         mFusedLocation = getFusedLocationProviderClient(this);
         if (!hasRun) {
             migrateDataPOIs();
@@ -77,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 if (getLocationPermission() && mLocationPermGranted && isServicesOK()) {
                     String inputRadical = racicalText.getText().toString();
                     if (!inputRadical.equals("")) {
+
                         message("Radical is saved!");
                         startLocationUpdates(inputRadical);
                     } else {
@@ -85,25 +100,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    private boolean isTooClose(Location location, String inputRadical) {
-        if (!outOfRange) {
-            return true;
-        }
-        for (PositionModel pointOfInterest : pointOfInterestList) {
-            Location locationPointOfInterest = new Location("");
-            locationPointOfInterest.setLatitude(pointOfInterest.getLatitude());
-            locationPointOfInterest.setLongitude(pointOfInterest.getLongtitude());
-            float distance = location.distanceTo(locationPointOfInterest);
-            if (inputRadical.compareTo(Float.toString(distance)) > 0) {
-                message("Your location is close to point of interest..." + "in " + pointOfInterest.getTitle());
-                outOfRange = false;
-                return true;
+        showDetailsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                redirectToShowActivity(saveModelForRedirect.get(saveModelForRedirect.size() - 1));
+                spinner.setVisibility(View.VISIBLE);
             }
-        }
-        outOfRange = true;
-        return false;
+        });
     }
 
     private void getPOIsList() {
@@ -153,10 +156,45 @@ public class MainActivity extends AppCompatActivity {
         getFusedLocationProviderClient(this).requestLocationUpdates(mLocationRequest, new LocationCallback() {
                     @Override
                     public void onLocationResult(LocationResult locationResult) {
-                        isTooClose(locationResult.getLastLocation(), inputRadical);
+                        computeDistance(locationResult.getLastLocation(), inputRadical);
                     }
                 },
                 Looper.myLooper());
+    }
+
+    private void computeDistance(Location location, String inputRadical) {
+        if (!outOfRange) {
+            return;
+        }
+        for (PositionModel pointOfInterest : pointOfInterestList) {
+            Location locationPointOfInterest = new Location("");
+            locationPointOfInterest.setLatitude(pointOfInterest.getLatitude());
+            locationPointOfInterest.setLongitude(pointOfInterest.getLongtitude());
+            float distance = location.distanceTo(locationPointOfInterest);
+            if (inputRadical.compareTo(Float.toString(distance)) > 0) {
+                message("Your location is close to point of interest..." + "in " + pointOfInterest.getTitle());
+                outOfRange = false;
+                canRedirect = true;
+                saveModelForRedirect.add(pointOfInterest);
+                showDetailsButton.setEnabled(true);
+
+                return;
+            }
+        }
+        outOfRange = true;
+    }
+
+    private void redirectToShowActivity(final PositionModel pointOfInterest) {
+        //Put some delay
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                spinner.setVisibility(View.GONE);
+                Intent i = new Intent(MainActivity.this, ShowActivity.class);
+                i.putExtra("pointOfInterest", pointOfInterest);
+                startActivity(i);
+            }
+        }, SOME_DELAY);
     }
 
     private boolean getLocationPermission() {
@@ -185,26 +223,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean isServicesOK() {
-        Log.d(TAG, "isServicesOK: checking google services version");
-        //reset view in editText
-        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(MainActivity.this);
-
-        if (available == ConnectionResult.SUCCESS) {
-            //everything is fine and the user can make map requests
-            Log.d(TAG, "isServicesOK: Google Play Services is working");
-            return true;
-        } else if (GoogleApiAvailability.getInstance().isUserResolvableError(available)) {
-            //an error occured but we can resolve it
-            Log.d(TAG, "isServicesOK: an error occured but we can fix it");
-            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(MainActivity.this, available, ERROR_DIALOG_REQUEST);
-            dialog.show();
-        } else {
-            Toast.makeText(this, "You can't make map requests", Toast.LENGTH_SHORT).show();
-        }
-        return false;
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         Log.d(TAG, "onRequestPermissionsResult: called.");
@@ -224,6 +242,26 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private boolean isServicesOK() {
+        Log.d(TAG, "isServicesOK: checking google services version");
+        //reset view in editText
+        int available = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(MainActivity.this);
+
+        if (available == ConnectionResult.SUCCESS) {
+            //everything is fine and the user can make map requests
+            Log.d(TAG, "isServicesOK: Google Play Services is working");
+            return true;
+        } else if (GoogleApiAvailability.getInstance().isUserResolvableError(available)) {
+            //an error occured but we can resolve it
+            Log.d(TAG, "isServicesOK: an error occured but we can fix it");
+            Dialog dialog = GoogleApiAvailability.getInstance().getErrorDialog(MainActivity.this, available, ERROR_DIALOG_REQUEST);
+            dialog.show();
+        } else {
+            Toast.makeText(this, "You can't make map requests", Toast.LENGTH_SHORT).show();
+        }
+        return false;
     }
 
     private void message(String messageKey) {
