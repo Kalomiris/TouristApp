@@ -3,4 +3,5 @@
     <string name="set_radical">set range</string>
     <string name="todo">TODO</string>
     <string name="listen_discription">Listen discription</string>
+    <string name="listen_description">listen description</string>
 </resources>
