@@ -1,10 +1,13 @@
 package com.kalom.UnipiTouristicApp;
 
 import android.location.Location;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 
 import com.google.firebase.database.IgnoreExtraProperties;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 @IgnoreExtraProperties
 public class PositionModel implements Serializable {
@@ -64,5 +67,31 @@ public class PositionModel implements Serializable {
 
     public void setLongtitude(double longtitude) {
         this.longtitude = longtitude;
+    }
+
+    @Override
+    public String toString() {
+        return "PositionModel{" +
+                "title='" + title + '\'' +
+                ", desc='" + desc + '\'' +
+                ", categ='" + categ + '\'' +
+                ", latitude=" + latitude +
+                ", longtitude=" + longtitude +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PositionModel)) return false;
+        PositionModel that = (PositionModel) o;
+        return Double.compare(that.latitude, latitude) == 0 &&
+                Double.compare(that.longtitude, longtitude) == 0;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    @Override
+    public int hashCode() {
+        return Objects.hash(latitude, longtitude);
     }
 }

@@ -4,4 +4,7 @@
     <string name="todo">TODO</string>
     <string name="listen_discription">Listen discription</string>
     <string name="listen_description">listen description</string>
+    <string name="title">Title:</string>
+    <string name="description">Description:</string>
+    <string name="category">Category:</string>
 </resources>

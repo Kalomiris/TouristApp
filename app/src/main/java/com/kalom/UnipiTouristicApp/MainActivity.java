@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
                     String inputRadical = racicalText.getText().toString();
                     if (!inputRadical.equals("")) {
 
-                        message("Radical is saved!");
+                        message("Range is saved!");
                         startLocationUpdates(inputRadical);
                     } else {
                         message("Enter a number in field!");
@@ -172,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
             locationPointOfInterest.setLongitude(pointOfInterest.getLongtitude());
             float distance = location.distanceTo(locationPointOfInterest);
             if (inputRadical.compareTo(Float.toString(distance)) > 0) {
-                message("Your location is close to point of interest..." + "in " + pointOfInterest.getTitle());
+                message("Your location is close to point of interest... " + pointOfInterest.getTitle());
                 outOfRange = false;
                 canRedirect = true;
                 saveModelForRedirect.add(pointOfInterest);

@@ -12,13 +12,13 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="54dp"
         android:layout_marginLeft="54dp"
-        android:layout_marginTop="123dp"
+        android:layout_marginTop="64dp"
         android:layout_marginEnd="54dp"
         android:layout_marginRight="54dp"
-        android:layout_marginBottom="120dp"
         android:textSize="18sp"
-        app:layout_constraintBottom_toBottomOf="@+id/descriptionView"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -28,13 +28,15 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="54dp"
         android:layout_marginLeft="54dp"
-        android:layout_marginTop="243dp"
+        android:layout_marginTop="48dp"
         android:layout_marginEnd="54dp"
         android:layout_marginRight="54dp"
         android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/titleView" />
 
     <TextView
         android:id="@+id/categoryView"
@@ -42,11 +44,13 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="54dp"
         android:layout_marginLeft="54dp"
-        android:layout_marginTop="98dp"
+        android:layout_marginTop="48dp"
         android:layout_marginEnd="54dp"
         android:layout_marginRight="54dp"
         android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/descriptionView" />
 
@@ -54,10 +58,44 @@
         android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="84dp"
+        android:layout_marginTop="24dp"
         android:text="@string/listen_description"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/categoryView" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/title"
+        app:layout_constraintBottom_toTopOf="@+id/titleView"
+        app:layout_constraintStart_toStartOf="@+id/titleView" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/description"
+        app:layout_constraintBottom_toTopOf="@+id/descriptionView"
+        app:layout_constraintStart_toStartOf="@+id/descriptionView" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/category"
+        app:layout_constraintBottom_toTopOf="@+id/categoryView"
+        app:layout_constraintStart_toStartOf="@+id/categoryView" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="247dp"
+        android:layout_height="177dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button2"
+        app:srcCompat="@drawable/parthenon" />
 
 </android.support.constraint.ConstraintLayout>

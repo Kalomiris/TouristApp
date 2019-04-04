@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class ShowActivity extends AppCompatActivity {
 
@@ -23,14 +24,10 @@ public class ShowActivity extends AppCompatActivity {
         title = findViewById(R.id.titleView);
         description = findViewById(R.id.descriptionView);
         category = findViewById(R.id.categoryView);
-
+        image = findViewById(R.id.imageView);
         pointOfInterest = (PositionModel) getIntent().getSerializableExtra("pointOfInterest");
         setViewContent(pointOfInterest);
 
-        FrameLayout frame = new FrameLayout(this);
-        frame.setId(CONTENT_VIEW_ID);
-        setContentView(frame, new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
 
     }
 
@@ -38,5 +35,30 @@ public class ShowActivity extends AppCompatActivity {
         title.setText(pointOfInterest.getTitle());
         description.setText(pointOfInterest.getDesc());
         category.setText(pointOfInterest.getCateg());
+        setImage(pointOfInterest.getTitle());
+    }
+
+    private void setImage(String title) {
+        switch (title) {
+            case "Acropolis":
+                image.setImageResource(R.drawable.parthenon);
+                break;
+            case "kalhmarmaro":
+                image.setImageResource(R.drawable.kalimarmaro);
+                break;
+            case "Stiles tou Dios":
+                image.setImageResource(R.drawable.stileDios);
+                break;
+            case "Arxaia Korinthos":
+                image.setImageResource(R.drawable.arxaiaKorintos);
+                break;
+            default:
+                message("Error in images!");
+                break;
+        }
+    }
+
+    private void message(String messageKey) {
+        Toast.makeText(this, messageKey, Toast.LENGTH_SHORT).show();
     }
 }
