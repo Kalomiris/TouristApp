@@ -1,6 +1,5 @@
 package com.kalom.UnipiTouristicApp;
 
-import android.location.Location;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 

@@ -41,6 +41,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
+import java.util.Date;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
@@ -49,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     private EditText racicalText;
     private Button setDistanceButton;
     private Button showDetailsButton;
+    private Button resetButton;
+    private Button analiticsButton;
     private DatabaseReference myRef;
     private ProgressBar spinner;
     private FusedLocationProviderClient mFusedLocation;
@@ -67,16 +70,20 @@ public class MainActivity extends AppCompatActivity {
     private static final long SOME_DELAY = 1000; //5 SECOND
     private static ArrayList<PositionModel> pointOfInterestList = new ArrayList<>();
     private static ArrayList<PositionModel> saveModelForRedirect = new ArrayList<>();
+    private static ArrayList<TimestampPosition> timestampList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        canRedirect = false;
-        pointOfInterestList.clear();
+        canRedirect = false;  //flag for redirect
+        pointOfInterestList.clear(); //clear list of sequence "get" from FireBase
         racicalText = findViewById(R.id.editText);
         setDistanceButton = findViewById(R.id.rangeButton);
         showDetailsButton = findViewById(R.id.showActivityButton);
+        analiticsButton = findViewById(R.id.analiticsButton);
+        resetButton = findViewById(R.id.resetbtn);
+        analiticsButton = findViewById(R.id.analiticsButton);
         showDetailsButton.setEnabled(canRedirect);
         spinner = findViewById(R.id.progressBar);
         spinner.setVisibility(View.GONE);
@@ -105,6 +112,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 redirectToShowActivity(saveModelForRedirect.get(saveModelForRedirect.size() - 1));
                 spinner.setVisibility(View.VISIBLE);
+            }
+        });
+        resetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, MainActivity.class));
+            }
+        });
+        analiticsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getTimeStamp();
             }
         });
     }
@@ -177,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
                 canRedirect = true;
                 saveModelForRedirect.add(pointOfInterest);
                 showDetailsButton.setEnabled(true);
-
+                setTimestamp(pointOfInterest);
                 return;
             }
         }
@@ -270,14 +289,60 @@ public class MainActivity extends AppCompatActivity {
 
     private void migrateDataPOIs() {
         myRef = FirebaseDatabase.getInstance().getReference("POIs");
+        DescriptionMigration desc = new DescriptionMigration();
         ArrayList<PositionModel> dataMigrated = new ArrayList<>();
-        dataMigrated.add(new PositionModel("Acropolis", "Archeological place high level", "builtings", 37.968211, 23.720583));
-        dataMigrated.add(new PositionModel("kalhmarmaro", "Archeological place high level", "builtings", 37.969252, 23.740268));
-        dataMigrated.add(new PositionModel("Stiles tou Dios", "Archeological place high level", "builtings", 37.968685, 23.731924));
-        dataMigrated.add(new PositionModel("Arxaia Korinthos", "Archeological place high level", "city", 37.904397, 22.877133));
+        dataMigrated.add(new PositionModel("Acropolis", desc.getDesc_Acropolis(), "builtings", 37.968211, 23.720583));
+        dataMigrated.add(new PositionModel("kalhmarmaro", desc.getDesc_Kalimarmaro(), "builtings", 37.969252, 23.740268));
+        dataMigrated.add(new PositionModel("Stiles tou Dios", desc.getDesc_stiles(), "builtings", 37.968685, 23.731924));
+        dataMigrated.add(new PositionModel("Arxaia Korinthos", desc.getDesc_ancienkorinthos(), "city", 37.904397, 22.877133));
+        dataMigrated.add(new PositionModel("Nea Smirni alsos", desc.getDesc_alsosNs(), "park", 37.949240, 23.714658));
         myRef.setValue(dataMigrated);
         hasRun = true;
 
+    }
+
+    private void setTimestamp(PositionModel pointOfInterest) {
+        myRef = FirebaseDatabase.getInstance().getReference("timestamp");
+        Date timeStamp = new Date();
+        TimestampPosition timePosition = new TimestampPosition(timeStamp, pointOfInterest);
+        myRef.push().setValue(timePosition);
+
+    }
+
+    private void getTimeStamp() {
+        myRef = FirebaseDatabase.getInstance().getReference("timestamp");
+        myRef.addChildEventListener(new ChildEventListener() {
+            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String prevChildKey) {
+                getTimeData(dataSnapshot);
+            }
+
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            }
+
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+            }
+
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+            }
+
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+            }
+        });
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void getTimeData(DataSnapshot dataSnapshot) {
+        TimestampPosition data = dataSnapshot.getValue(TimestampPosition.class);
+        timestampList.add(data);
+        int counterTimeStamp = timestampList.size();
+//        for (TimestampPosition element : timestampList){
+//            String[]categoryArray = new String[100];
+//            for(int i = 0; i < counterTimeStamp - 1; i++){
+//                categoryArray [i] = element.getPositionModel().getCateg();
+//            }
+//        }
     }
 
 }

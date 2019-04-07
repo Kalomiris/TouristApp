@@ -12,31 +12,15 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="54dp"
         android:layout_marginLeft="54dp"
-        android:layout_marginTop="64dp"
         android:layout_marginEnd="54dp"
         android:layout_marginRight="54dp"
+        android:layout_marginBottom="16dp"
         android:textSize="18sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/imageView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/descriptionView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="54dp"
-        android:layout_marginLeft="54dp"
-        android:layout_marginTop="48dp"
-        android:layout_marginEnd="54dp"
-        android:layout_marginRight="54dp"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/titleView" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
         android:id="@+id/categoryView"
@@ -44,25 +28,28 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="54dp"
         android:layout_marginLeft="54dp"
-        android:layout_marginTop="48dp"
         android:layout_marginEnd="54dp"
         android:layout_marginRight="54dp"
+        android:layout_marginBottom="80dp"
         android:textSize="18sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/descriptionView" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
         android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="52dp"
+        android:layout_marginEnd="42dp"
+        android:layout_marginRight="42dp"
+        android:layout_marginBottom="65dp"
         android:text="@string/listen_description"
+        app:layout_constraintBottom_toTopOf="@+id/imageView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/categoryView" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/textView2"
@@ -71,14 +58,6 @@
         android:text="@string/title"
         app:layout_constraintBottom_toTopOf="@+id/titleView"
         app:layout_constraintStart_toStartOf="@+id/titleView" />
-
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/description"
-        app:layout_constraintBottom_toTopOf="@+id/descriptionView"
-        app:layout_constraintStart_toStartOf="@+id/descriptionView" />
 
     <TextView
         android:id="@+id/textView4"
@@ -90,12 +69,13 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="247dp"
-        android:layout_height="177dp"
-        android:layout_marginTop="16dp"
+        android:layout_width="360dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="220dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.686"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button2"
-        app:srcCompat="@drawable/parthenon" />
+        app:layout_constraintTop_toBottomOf="@+id/button2" />
 
 </android.support.constraint.ConstraintLayout>
