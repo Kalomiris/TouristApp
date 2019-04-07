@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Point;
 import android.location.Location;
 import android.os.Build;
 import android.os.Handler;
@@ -42,6 +41,7 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedList;
 
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
     private Button setDistanceButton;
     private Button showDetailsButton;
     private Button resetButton;
-    private Button analiticsButton;
+    private Button analyticsButton;
     private DatabaseReference myRef;
     private ProgressBar spinner;
     private FusedLocationProviderClient mFusedLocation;
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private static final long SOME_DELAY = 1000; //5 SECOND
     private static ArrayList<PositionModel> pointOfInterestList = new ArrayList<>();
     private static ArrayList<PositionModel> saveModelForRedirect = new ArrayList<>();
-    private static ArrayList<TimestampPosition> timestampList = new ArrayList<>();
+    private static LinkedList<TimestampPosition> timestampList = new LinkedList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,9 +81,9 @@ public class MainActivity extends AppCompatActivity {
         racicalText = findViewById(R.id.editText);
         setDistanceButton = findViewById(R.id.rangeButton);
         showDetailsButton = findViewById(R.id.showActivityButton);
-        analiticsButton = findViewById(R.id.analiticsButton);
+        analyticsButton = findViewById(R.id.analiticsButton);
         resetButton = findViewById(R.id.resetbtn);
-        analiticsButton = findViewById(R.id.analiticsButton);
+        analyticsButton = findViewById(R.id.analiticsButton);
         showDetailsButton.setEnabled(canRedirect);
         spinner = findViewById(R.id.progressBar);
         spinner.setVisibility(View.GONE);
@@ -92,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
             migrateDataPOIs();
         }
         getPOIsList();
+        getTimeStamp();
         setDistanceButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -120,12 +121,28 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this, MainActivity.class));
             }
         });
-        analiticsButton.setOnClickListener(new View.OnClickListener() {
+        analyticsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getTimeStamp();
+                redirectToAnalytics(timestampList.removeLast());
+                spinner.setVisibility(View.VISIBLE);
             }
         });
+    }
+
+    private void redirectToAnalytics(final TimestampPosition removeLast) {
+        //Put some delay
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                int counterPOIs = timestampList.size();
+                spinner.setVisibility(View.GONE);
+                Intent i = new Intent(MainActivity.this, AnalyctsActivity.class);
+                i.putExtra("analytics", removeLast);
+                i.putExtra("counter", counterPOIs);
+                startActivity(i);
+            }
+        }, SOME_DELAY);
     }
 
     private void getPOIsList() {
@@ -336,13 +353,6 @@ public class MainActivity extends AppCompatActivity {
     private void getTimeData(DataSnapshot dataSnapshot) {
         TimestampPosition data = dataSnapshot.getValue(TimestampPosition.class);
         timestampList.add(data);
-        int counterTimeStamp = timestampList.size();
-//        for (TimestampPosition element : timestampList){
-//            String[]categoryArray = new String[100];
-//            for(int i = 0; i < counterTimeStamp - 1; i++){
-//                categoryArray [i] = element.getPositionModel().getCateg();
-//            }
-//        }
     }
 
 }

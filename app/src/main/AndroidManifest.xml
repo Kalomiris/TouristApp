@@ -16,7 +16,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="AllowBackup,GoogleAppIndexingWarning">
-        <activity android:name=".ShowActivity"></activity>
+        <activity android:name=".AnalyctsActivity"></activity>
+        <activity android:name=".ShowActivity" />
 
         <meta-data
             android:name="com.google.android.gms.version"
